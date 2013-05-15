@@ -1,0 +1,297 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>index</title>
+		<meta name="author" content="gee" />
+		<style type='text/css'>
+			body,button,div,p{
+				padding: 0;
+				margin: 0;
+			}
+			body{
+				font-family: arial, verdana;
+			}
+			
+			.button{
+				display: inline-block;
+				width: 500px;
+			}
+			.button button{
+				margin: 0px 5px;
+			}
+			.editor{
+				display: inline-block;
+				width: 400px;
+			}
+			
+			div.objValue, div.objKey{
+				display: inline-block;
+				width: 40px;
+			}
+			
+			input.inputKey, input.inputValue{
+				width: 40px;
+				border: 1px solid #ccc
+			}
+			
+		</style>
+		<script type='text/javascript' src='../../../dojo/dojo.js' 
+			data-dojo-config="async: true, isDebug: true, parseOnLoad: false"></script>
+		<!-- Date: 2013-05-13 -->
+	</head>
+	<body>
+		<script type='text/javascript'>
+		require([
+			'dojo/_base/lang',
+			'dojo/on',
+			'dojo/query',
+			'dojo/dom-construct',
+			'dojo/dom-style',
+			'dojox/NodeList/delegate',
+			'dojo/NodeList-traverse'
+		], function(lang, on, query, domConstruct, domStyle){
+			obj = {};
+			query('.objectEditor')[0]._curObj = obj;
+			
+			// var editor = query('#editor')[0];
+			
+			// query('#editor').on('click', function(){
+				// console.log('editor clicked');
+			// })
+			function isvalid(val){
+				return val !== undefined && val !== null;
+			}
+			
+			function getType(objEditor){
+				return objEditor.getAttribute('type');
+			}
+			
+			function getKeyValue(objEditor){
+				var keyDom = query('input.inputKey, div.inputKey', objEditor)[0];
+				var key = isvalid(keyDom.value) ? keyDom.value : keyDom.innerHTML;
+				if(lang.isArray(objEditor._parentObj)){
+					key = parseInt(key, 10);
+				}
+				return key;
+			}
+			
+			function toObject(){
+				var objEditor = query(this).closest('.objectEditor')[0],
+					objValueDiv = query('.objValue', objEditor)[0];
+				// console.log(objValueDiv);
+				// var objKeyDiv = query('.objKey', objEditor)[0];
+				// var keyDom = query('input.inputKey,div.inputKey', objEditor)[0];
+				// key = keyDom.value || keyDom.innerHTML;
+				key = getKeyValue(objEditor);
+				var obj = objEditor._parentObj;
+				if(lang.isArray(obj)){
+					key = parseInt(key, 10);
+					console.log(key);
+				}
+				objEditor.setAttribute('type', 'object');
+				objValueDiv.innerHTML = 'Object';	
+				
+				objEditor._curObj = {};
+				if(key !== '' && key !== undefined){
+					obj[key] = objEditor._curObj = {};		
+				}else{
+				//	objEditor._curObj = {};
+				}
+				// addChild.apply(this, []);
+			}
+			
+			function toArray(){
+				var objEditor = query(this).closest('.objectEditor')[0];
+				// var objKeyDiv = query('.objKey', objEditor)[0];
+					objValueDiv = query('.objValue', objEditor)[0],
+					children = query('.children', objEditor)[0],
+					key = getKeyValue(objEditor),
+					p = objEditor._parentObj;
+					
+				objEditor._curObj = [];
+				if(isvalid(key)){
+					p[key] = objEditor._curObj;
+				}
+				
+				console.log('children is: ', children);
+				var c;
+				while(c = children.firstChild){
+					removeProperty.apply(c, []);
+					// children.removeChild(c);
+				}
+				
+				objEditor.setAttribute('type', 'array');
+				objValueDiv.innerHTML = '[' + objEditor._curObj.length + ']'; 
+			}
+			
+			function addChild(){
+				var objEditor = query(this).closest('.objectEditor')[0];
+				var container = query('.children', objEditor)[0];
+				var editor = query('.editor', objEditor)[0];
+				var type = getType(objEditor);
+				// console.log('editor', editor);
+				// type = type? type : 'auto';
+				if(objEditor && lang.isObject(objEditor._curObj)){
+					if(type == 'array'){
+						var nd = createEditor('array', objEditor._curObj.length);
+						nd._parentObj = objEditor._curObj;	
+						nd._curObj = '';
+						if(lang.isArray(nd._parentObj)){
+							nd._parentObj.push(nd._curObj);
+						}
+					}else{
+						var nd = createEditor(type);
+						nd._parentObj = objEditor._curObj;	
+					}
+
+					container.appendChild(nd);
+					// objEditor.appendChild(nd);
+					
+					
+					nd.setAttribute('type', 'auto');
+					
+					query('.editor', nd)[0].style.paddingLeft = parseInt(window.getComputedStyle(editor, null)
+						.getPropertyValue('padding-left'), 10) + 42 + 'px';
+				}
+				
+			}
+			
+			function removeProperty(){
+				var objEditor = query(this).closest('.objectEditor')[0];
+				var key = query('input.inputKey,div.inputKey', objEditor)[0].value;
+				var obj = objEditor._parentObj;
+				// console.log('key is: ', key);
+				
+				if(key){
+					delete obj[key];
+				}
+				objEditor.parentNode.removeChild(objEditor);
+			}
+			
+			function objKeyChange(evt){
+				var key = this.value;
+				// var value = this.nextSibling.nextSibling.value;
+				
+				var objEditor = query(this).closest('.objectEditor')[0];
+				
+				if(objEditor._curObj){
+					value = objEditor._curObj;
+				}else{
+					if(getType(objEditor) == 'object'){
+						value = {};
+					}else if(getType(objEditor) == 'auto'){
+						value = '';
+					}	
+				}
+				var obj = objEditor._parentObj;
+
+				// console.log('value is: ', this._curValue);
+				// console.log(value);			
+				if(this._curValue){
+					obj[key.toString()] = obj[this._curValue];
+					delete obj[this._curValue];
+					
+				}else{
+					obj[key.toString()] = value;
+				}
+				// objEditor._curObj = obj[key.toString()];
+				this._curValue = key;
+			}
+			
+			function objValueChange(){
+				var value = this.value;
+				var objEditor = query(this).closest('.objectEditor')[0];
+				var keyDom = query('input.inputKey, div.inputKey', objEditor)[0]; 
+				var obj = objEditor._parentObj;
+				var key = keyDom.value || keyDom.innerHTML;
+				if(lang.isArray(obj)){
+					key = parseInt(key, 10);
+				}
+				
+				console.log(key);
+				console.log('key is', key);
+				
+				objEditor._curObj = value;
+				if(key in obj){
+					obj[key] = objEditor._curObj;
+				}
+			}
+			
+			function curObj(){
+				console.log(query(this).closest('.objectEditor')[0]._curObj);
+				return this._curObj;
+			}
+				
+			
+			// function getNode(){
+				// return this._
+			// }
+			
+			query('.objectEditor').delegate('.addChild', 'onclick', addChild);
+			query('.objectEditor').delegate('.removeChild', 'onclick', removeProperty);
+			query('.objectEditor').delegate('input.inputKey', 'onchange', objKeyChange);
+			query('.objectEditor').delegate('input.inputValue', 'onchange', objValueChange);
+			query('.objectEditor').delegate('.toObject', 'onclick', toObject);
+			query('.objectEditor').delegate('.toArray', 'onclick', toArray);
+			query('.objectEditor').delegate('.curObj', 'onclick', curObj);
+			
+
+			
+			function createEditor(type, index){
+				index = index? index : 0;
+				t = ["<div class='objectEditor'>",
+						"<div class='button'>",
+							"<button class='toObject'>Obj</button>",
+							"<button class='toArray'>Ary</button>",
+							"<button>Other</button>",
+							"<button class='addChild'>Add child</button>",
+							"<button class='removeChild'>Remove child</button>",
+							"<button class='curObj'>curObj</button>",
+						"</div>",
+						"<div class='editor'>",
+							"<div class='objKey'>",
+							type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text'/>",
+							"</div>:",
+							"<div class='objValue'>",
+								"<input class='inputValue' type='text'>",
+							"</div>",
+						"</div>",
+						"<div class='children'>",
+						"</div>",
+					"</div>"].join('');
+				
+				var d = domConstruct.toDom(t);
+				return d;	
+			}
+			
+		})
+
+			
+			
+		</script>
+		
+		<div id='editor'>
+			<div class='objectEditor'>
+				<div class='button'>
+					<button class='toObject'>Obj</button>
+					<button>Ary</button>
+					<button>Other</button>
+					<button class='addChild'>Add child</button>
+					<button class='removeChild'>Remove Element</button>
+				</div>
+				<div class='editor'>
+					object
+				</div>
+				<div class='children'>
+				</div>
+			</div>
+			
+			
+		</div>
+		
+	</body>
+</html>
+
