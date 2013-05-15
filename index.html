@@ -15,19 +15,29 @@
 				font-family: arial, verdana;
 			}
 			
+			.objectEditor:hover{
+			}
+			
+			.viewWrapper:hover{
+				background: #F4F4F4;
+				
+			}
 			.button{
 				display: inline-block;
+				margin: 5px;
 				width: 500px;
-				border: 1px solid #ccc;
+				/*border: 1px solid #ccc;*/
 			}
 			.button button{
-				margin: 0px 5px;
 			}
 			.editor{
 				display: inline-block;
 				width: 400px;
 			}
-			
+			span.colon{
+				margin: 0px 10px;
+			}
+						
 			div.objValue, div.objKey{
 				display: inline-block;
 				width: 40px;
@@ -36,6 +46,11 @@
 			input.inputKey, input.inputValue{
 				width: 40px;
 				border: 1px solid #ccc
+			}
+			
+			.startbracket,.endbracket{
+				color: lightgreen;
+				padding-left: 512px;
 			}
 			
 		</style>
@@ -54,8 +69,12 @@
 			'dojox/NodeList/delegate',
 			'dojo/NodeList-traverse'
 		], function(lang, on, query, domConstruct, domStyle){
+			//initialize
+			var root = query('.objectEditor')[0];
 			obj = {};
-			obj = query('.objectEditor')[0]._curObj = {};
+			obj = root._curObj = {};
+			root.setAttribute('root', 'true');
+			root.setAttribute('type', 'object');
 			
 			// var editor = query('#editor')[0];
 			
@@ -71,7 +90,24 @@
 			}
 			
 			function isroot(objEditor){
-				return objEditor.getAttribute('type') == 'root'
+				return objEditor.getAttribute('root') == 'true'
+			}
+			
+			function updateView(objEditor, type){
+				var objValueDiv = query('.objValue', objEditor)[0];
+				var startb = query('.startbracket', objEditor)[0];
+				var endb = query('.endbracket', objEditor)[0];
+				objEditor.setAttribute('type', type);
+				if(type == 'array'){
+					objValueDiv.innerHTML = 'Array';			
+					startb.innerHTML = '[';
+					endb.innerHTML = ']';		
+				}else{
+					objValueDiv.innerHTML = 'Object';
+					startb.innerHTML = '{';
+					endb.innerHTML = '}';						
+					
+				}
 			}
 			
 			function getKeyValue(objEditor){
@@ -91,28 +127,39 @@
 			function toObject(){
 				var objEditor = query(this).closest('.objectEditor')[0],
 					objValueDiv = query('.objValue', objEditor)[0];
+					children = query('.children', objEditor)[0],
+					
 				// console.log(objValueDiv);
 				// var objKeyDiv = query('.objKey', objEditor)[0];
 				// var keyDom = query('input.inputKey,div.inputKey', objEditor)[0];
 				// key = keyDom.value || keyDom.innerHTML;
 				key = getKeyValue(objEditor);
-				var obj = objEditor._parentObj;
-				if(lang.isArray(obj)){
-					key = parseInt(key, 10);
-					console.log(key);
-				}
+				var p = objEditor._parentObj;
 				
-				objEditor.setAttribute('type', 'object');
-				objValueDiv.innerHTML = 'Object';	
-				
-				objEditor._curObj = {};
-				if(key !== '' && key !== undefined){
-					obj[key] = objEditor._curObj = {};		
-				}else{
-				//	objEditor._curObj = {};
-				}
-				if(isroot(objEditor)){
-					obj = objEditor._curObj;
+				if(getType(objEditor) !== 'object'){
+					if(lang.isArray(p)){
+						key = parseInt(key, 10);
+						console.log(key);
+					}
+					
+					objEditor._curObj = {};
+					if(key !== '' && key !== undefined && p){
+						p[key] = objEditor._curObj = {};		
+					}else{
+					//	objEditor._curObj = {};
+					}
+					if(isroot(objEditor)){
+						obj = objEditor._curObj;
+					}
+					var children = query('.objectEditor', children);
+					while(children.length){
+						var c = children.shift();
+						removeProperty.apply(c, []);
+					}				
+					updateView(objEditor, 'object');
+					// objEditor.setAttribute('type', 'object');
+					// objValueDiv.innerHTML = 'Object';	
+					
 				}
 				// addChild.apply(this, []);
 			}
@@ -124,34 +171,37 @@
 					children = query('.children', objEditor)[0],
 					key = getKeyValue(objEditor),
 					p = objEditor._parentObj;
-				console.log(123);
 				
-				objEditor._curObj = [];
-				if(isvalid(key) && key !== ''){
-					p[key] = objEditor._curObj;
+				if(getType(objEditor) !== 'array'){
+					objEditor._curObj = [];
+					if(isvalid(key) && key !== ''){
+						p[key] = objEditor._curObj;
+					}
+					if(isroot(objEditor)){
+						console.log('is root in toarray');
+						obj = objEditor._curObj;
+					}
+					
+					console.log('children is: ', children);
+					var children = query('.objectEditor', children);
+					while(children.length){
+						var c = children.shift();
+						removeProperty.apply(c, []);
+					}
+					
+					updateView(objEditor, 'array');
+					// objEditor.setAttribute('type', 'array');
+					// objValueDiv.innerHTML = '[' + objEditor._curObj.length + ']'; 
 				}
-				if(isroot(objEditor)){
-					obj = objEditor._curObj;
-				}
-				
-				console.log('children is: ', children);
-				var children = query('.objectEditor', children);
-				while(children.length){
-					var c = children.shift();
-					// console.log('c is: ', c);
-					// console.log(c.domNode)
-					removeProperty.apply(c, []);
-					// children.removeChild(c);
-				}
-				
-				objEditor.setAttribute('type', 'array');
-				objValueDiv.innerHTML = '[' + objEditor._curObj.length + ']'; 
 			}
 			
 			function addChild(){
-				var objEditor = query(this).closest('.objectEditor')[0];
-				var container = query('.children', objEditor)[0];
-				var editor = query('.editor', objEditor)[0];
+				var objEditor = query(this).closest('.objectEditor')[0],
+					container = query('.children', objEditor)[0],
+					editor = query('.editor', objEditor)[0],
+					startb = query('.startbracket', objEditor)[0],
+					endb = query('.endbracket', objEditor).pop();
+				
 				var type = getType(objEditor);
 				// console.log('editor', editor);
 				// type = type? type : 'auto';
@@ -174,8 +224,14 @@
 					
 					nd.setAttribute('type', 'auto');
 					
+					console.log(startb);
+					console.log(endb);
 					query('.editor', nd)[0].style.paddingLeft = parseInt(window.getComputedStyle(editor, null)
 						.getPropertyValue('padding-left'), 10) + 42 + 'px';
+					query('.startbracket', nd)[0].style.paddingLeft = parseInt(window.getComputedStyle(startb, null)
+						.getPropertyValue('padding-left'), 10) + 42 + 'px';			
+					query('.endbracket', nd)[0].style.paddingLeft = parseInt(window.getComputedStyle(endb, null)
+						.getPropertyValue('padding-left'), 10) + 42 + 'px';					
 				}
 				
 			}
@@ -210,7 +266,8 @@
 				var key = this.value;
 				// var value = this.nextSibling.nextSibling.value;
 				
-				var objEditor = query(this).closest('.objectEditor')[0];
+				var objEditor = query(this).closest('.objectEditor')[0],
+					p = objEditor._parentObj;
 				
 				if(objEditor._curObj){
 					value = objEditor._curObj;
@@ -221,17 +278,19 @@
 						value = '';
 					}	
 				}
-				var obj = objEditor._parentObj;
-
-				// console.log('value is: ', this._curValue);
-				// console.log(value);			
-				if(this._curValue){
-					obj[key.toString()] = obj[this._curValue];
-					delete obj[this._curValue];
-					
+				if(p.hasOwnProperty(key)){
+					evt.preventDefault();
+					evt.stopPropagation();
+					return false;
 				}else{
-					obj[key.toString()] = value;
+					if(isvalid(this._curValue)){
+						p[key.toString()] = p[this._curValue];
+						delete obj[this._curValue];
+						
+					}else{
+						obj[key.toString()] = value;
 				}
+				}		
 				// objEditor._curObj = obj[key.toString()];
 				this._curValue = key;
 			}
@@ -276,26 +335,41 @@
 
 			
 			function createEditor(type, index){
+				var sb, eb = '';
+				if(type == 'object'){
+					sb = '{';
+					eb = '}';
+				}else if(type == 'array'){
+					sb = '[';
+					eb = ']';
+				}
 				index = index? index : 0;
 				t = ["<div class='objectEditor'>",
-						"<div class='button'>",
-							"<button class='toObject'>Obj</button>",
-							"<button class='toArray'>Ary</button>",
-							"<button>Other</button>",
-							"<button class='addChild'>Add child</button>",
-							"<button class='removeChild'>Remove</button>",
-							"<button class='curObj'>curObj</button>",
-						"</div>",
-						"<div class='editor'>",
-							"<div class='objKey'>",
-							type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text'/>",
-							"</div>:",
-							"<div class='objValue'>",
-								"<input class='inputValue' type='text'>",
+						"<div class='viewWrapper'>",
+							"<div class='button'>",
+								"<button class='toObject'>Obj</button>",
+								"<button class='toArray'>Ary</button>",
+								"<button>Other</button>",
+								"<button class='addChild'>Add child</button>",
+								"<button class='removeChild'>Remove</button>",
+								"<button class='curObj'>curObj</button>",
 							"</div>",
+							"<div class='editor'>",
+								"<div class='objKey'>",
+								type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text'/>",
+								"</div>",
+								"<span class='colon'>:</span>",
+								"<div class='objValue'>",
+									"<input class='inputValue' type='text'>",
+								"</div>",
+							"</div>",
+						"</div>",
+						"<div class='startbracket'>",
 						"</div>",
 						"<div class='children'>",
 						"</div>",
+						"<div class='endbracket'>",
+						"</div>",						
 					"</div>"].join('');
 				
 				var d = domConstruct.toDom(t);
@@ -309,22 +383,29 @@
 		</script>
 		
 		<div id='editor'>
-			<div class='objectEditor' type='root'>
-				<div class='button'>
-					<button class='toObject'>Obj</button>
-					<button class='toArray'>Ary</button>
-					<button>Other</button>
-					<button class='addChild'>Add child</button>
-					<button class='removeChild'>Remove</button>
-					<button class='curObj'>curObj</button>
+			<div class='objectEditor' root='true'>
+				<div class='viewWrapper'>
+					<div class='button'>
+						<button class='toObject'>Obj</button>
+						<button class='toArray'>Ary</button>
+						<button>Other</button>
+						<button class='addChild'>Add child</button>
+						<button class='removeChild'>Remove</button>
+						<button class='curObj'>curObj</button>
+					</div>
+					<div class='editor'>
+						<div class='objValue'>Object</div>
+					</div>
 				</div>
-				<div class='editor'>
-					<div class='objValue'>Object</div>
-				</div>
+				<div class='startbracket'>
+					{
+				</div>				
 				<div class='children'>
 				</div>
+				<div class='endbracket'>
+					}
+				</div>
 			</div>
-			
 			
 		</div>
 		
