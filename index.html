@@ -18,6 +18,7 @@
 			.button{
 				display: inline-block;
 				width: 500px;
+				border: 1px solid #ccc;
 			}
 			.button button{
 				margin: 0px 5px;
@@ -54,7 +55,7 @@
 			'dojo/NodeList-traverse'
 		], function(lang, on, query, domConstruct, domStyle){
 			obj = {};
-			query('.objectEditor')[0]._curObj = obj;
+			obj = query('.objectEditor')[0]._curObj = {};
 			
 			// var editor = query('#editor')[0];
 			
@@ -69,11 +70,20 @@
 				return objEditor.getAttribute('type');
 			}
 			
+			function isroot(objEditor){
+				return objEditor.getAttribute('type') == 'root'
+			}
+			
 			function getKeyValue(objEditor){
-				var keyDom = query('input.inputKey, div.inputKey', objEditor)[0];
-				var key = isvalid(keyDom.value) ? keyDom.value : keyDom.innerHTML;
-				if(lang.isArray(objEditor._parentObj)){
-					key = parseInt(key, 10);
+				var editorDiv = query('.editor', objEditor)[0];
+				var keyDom = query('input.inputKey, div.inputKey', editorDiv)[0],
+					key;
+				if(keyDom){
+					var key = isvalid(keyDom.value) ? keyDom.value : keyDom.innerHTML;
+					if(lang.isArray(objEditor._parentObj)){
+						key = parseInt(key, 10);
+					}
+					
 				}
 				return key;
 			}
@@ -91,6 +101,7 @@
 					key = parseInt(key, 10);
 					console.log(key);
 				}
+				
 				objEditor.setAttribute('type', 'object');
 				objValueDiv.innerHTML = 'Object';	
 				
@@ -99,6 +110,9 @@
 					obj[key] = objEditor._curObj = {};		
 				}else{
 				//	objEditor._curObj = {};
+				}
+				if(isroot(objEditor)){
+					obj = objEditor._curObj;
 				}
 				// addChild.apply(this, []);
 			}
@@ -110,15 +124,22 @@
 					children = query('.children', objEditor)[0],
 					key = getKeyValue(objEditor),
 					p = objEditor._parentObj;
-					
+				console.log(123);
+				
 				objEditor._curObj = [];
 				if(isvalid(key) && key !== ''){
 					p[key] = objEditor._curObj;
 				}
+				if(isroot(objEditor)){
+					obj = objEditor._curObj;
+				}
 				
 				console.log('children is: ', children);
-				var c;
-				while(c = children.firstChild){
+				var children = query('.objectEditor', children);
+				while(children.length){
+					var c = children.shift();
+					// console.log('c is: ', c);
+					// console.log(c.domNode)
 					removeProperty.apply(c, []);
 					// children.removeChild(c);
 				}
@@ -160,6 +181,8 @@
 			}
 			
 			function removeProperty(){
+				console.log('in remove property');
+				
 				var objEditor = query(this).closest('.objectEditor')[0];
 					key = getKeyValue(objEditor);
 				// var key = query('input.inputKey,div.inputKey', objEditor)[0].value;
@@ -260,7 +283,7 @@
 							"<button class='toArray'>Ary</button>",
 							"<button>Other</button>",
 							"<button class='addChild'>Add child</button>",
-							"<button class='removeChild'>Remove child</button>",
+							"<button class='removeChild'>Remove</button>",
 							"<button class='curObj'>curObj</button>",
 						"</div>",
 						"<div class='editor'>",
@@ -286,16 +309,17 @@
 		</script>
 		
 		<div id='editor'>
-			<div class='objectEditor'>
+			<div class='objectEditor' type='root'>
 				<div class='button'>
 					<button class='toObject'>Obj</button>
-					<button>Ary</button>
+					<button class='toArray'>Ary</button>
 					<button>Other</button>
 					<button class='addChild'>Add child</button>
-					<button class='removeChild'>Remove Element</button>
+					<button class='removeChild'>Remove</button>
+					<button class='curObj'>curObj</button>
 				</div>
 				<div class='editor'>
-					object
+					<div class='objValue'>Object</div>
 				</div>
 				<div class='children'>
 				</div>
