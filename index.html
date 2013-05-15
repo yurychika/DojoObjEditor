@@ -112,7 +112,7 @@
 					p = objEditor._parentObj;
 					
 				objEditor._curObj = [];
-				if(isvalid(key)){
+				if(isvalid(key) && key !== ''){
 					p[key] = objEditor._curObj;
 				}
 				
@@ -161,12 +161,24 @@
 			
 			function removeProperty(){
 				var objEditor = query(this).closest('.objectEditor')[0];
-				var key = query('input.inputKey,div.inputKey', objEditor)[0].value;
-				var obj = objEditor._parentObj;
+					key = getKeyValue(objEditor);
+				// var key = query('input.inputKey,div.inputKey', objEditor)[0].value;
+				var p = objEditor._parentObj;
 				// console.log('key is: ', key);
-				
-				if(key){
-					delete obj[key];
+				if(isvalid(key) && key !== ''){
+					delete p[key];
+				}
+
+				if(lang.isArray(p)){
+					console.log(123);
+					p.splice(key, 1);
+					var s = objEditor;
+					while(s = s.nextSibling){
+						key = getKeyValue(s);
+						console.log('key is: ', key);
+						var keyDom = query('.inputKey', s)[0];
+						keyDom.innerHTML = key - 1;
+					}
 				}
 				objEditor.parentNode.removeChild(objEditor);
 			}
