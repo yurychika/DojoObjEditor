@@ -200,9 +200,10 @@
 					container = query('.children', objEditor)[0],
 					editor = query('.editor', objEditor)[0],
 					startb = query('.startbracket', objEditor)[0],
-					endb = query('.endbracket', objEditor).pop();
+					endb = query('.endbracket', objEditor).pop(),
+					type = getType(objEditor);
 				
-				var type = getType(objEditor);
+				
 				// console.log('editor', editor);
 				// type = type? type : 'auto';
 				if(objEditor && lang.isObject(objEditor._curObj)){
@@ -288,7 +289,7 @@
 						delete obj[this._curValue];
 						
 					}else{
-						obj[key.toString()] = value;
+						p[key.toString()] = value;
 				}
 				}		
 				// objEditor._curObj = obj[key.toString()];
