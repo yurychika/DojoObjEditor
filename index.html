@@ -120,11 +120,13 @@
 
 			}
 			
-			window.inputKeyOnBlur = function inputKeyOnBlur(input){
+			window.inputKeyOnBlur = function inputKeyOnBlur(event, input){
 				console.log(input);
 				if(input.classList.contains('duplicate')){
 					console.log('in duplicate');
-					input.focus();
+					setTimeout(function(){
+						input.focus();
+					}, 0);
 				}
 				return true;
 			}
@@ -308,7 +310,7 @@
 				if(!p.hasOwnProperty(key)){			//if already has a key value, can't override
 					if(isvalid(this._curValue)){
 						p[key.toString()] = objEditor._curObj;
-						if(p[this._curValue] == objEditor.curObj){
+						if(p[this._curValue] == objEditor._curObj){
 							delete p[this._curValue];
 						}
 					}else{
@@ -385,7 +387,7 @@
 							"</div>",
 							"<div class='editor'>",
 								"<div class='objKey'>",
-								type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text' onblur='inputKeyOnBlur(event,this)'/>",
+								type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text' onblur='inputKeyOnBlur(event, this)'/>",
 								"</div>",
 								"<span class='colon'>:</span>",
 								"<div class='objValue'>",
@@ -421,8 +423,6 @@
 						<button class='addChild'>Add child</button>
 						<button class='removeChild'>Remove</button>
 						<button class='curObj'>curObj</button>
-						<input class='duplicate'>bb</input>
-
 					</div>
 					<div class='editor'>
 						<div class='objValue'>Object</div>
