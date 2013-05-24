@@ -15,6 +15,7 @@
 				font-family: arial, verdana;
 			}
 			
+			
 			.objectEditor:hover{
 			}
 			
@@ -51,6 +52,9 @@
 			.startbracket,.endbracket{
 				color: lightgreen;
 				padding-left: 512px;
+			}
+			.duplicate{
+				border: 1px solid red !important;
 			}
 			
 		</style>
@@ -108,6 +112,21 @@
 					endb.innerHTML = '}';						
 					
 				}
+			}
+			
+			function duplicateOnBlur(e){
+				console.log('in on blur');
+				console.log(e.target)
+
+			}
+			
+			window.inputKeyOnBlur = function inputKeyOnBlur(input){
+				console.log(input);
+				if(input.classList.contains('duplicate')){
+					console.log('in duplicate');
+					input.focus();
+				}
+				return true;
 			}
 			
 			function getKeyValue(objEditor){
@@ -216,7 +235,8 @@
 						}
 					}else{
 						var nd = createEditor(type);
-						nd._parentObj = objEditor._curObj;	
+						nd._parentObj = objEditor._curObj;
+						//objEditor._curObj[''] = nd._curObj = '';	
 					}
 
 					container.appendChild(nd);
@@ -265,10 +285,15 @@
 			
 			function objKeyChange(evt){
 				var key = this.value;
+				key = key.toString();
 				// var value = this.nextSibling.nextSibling.value;
 				
 				var objEditor = query(this).closest('.objectEditor')[0],
-					p = objEditor._parentObj;
+					parentObjEditor = query(objEditor).closest('objectEditor'),
+					p = objEditor._parentObj,
+					editorDiv = query('.editor', objEditor)[0],
+					keyDom = query('input.inputKey, div.inputKey', editorDiv)[0];
+
 				
 				if(objEditor._curObj){
 					value = objEditor._curObj;
@@ -279,21 +304,22 @@
 						value = '';
 					}	
 				}
-				if(p.hasOwnProperty(key)){
-					evt.preventDefault();
-					evt.stopPropagation();
-					return false;
-				}else{
+				
+				if(!p.hasOwnProperty(key)){			//if already has a key value, can't override
 					if(isvalid(this._curValue)){
-						p[key.toString()] = p[this._curValue];
-						delete obj[this._curValue];
-						
+						p[key.toString()] = objEditor._curObj;
+						if(p[this._curValue] == objEditor.curObj){
+							delete p[this._curValue];
+						}
 					}else{
 						p[key.toString()] = value;
+					}		
+					this._curValue = key;
+					keyDom.classList.remove('duplicate');
+				}else{
+					keyDom.classList.add('duplicate');
 				}
-				}		
-				// objEditor._curObj = obj[key.toString()];
-				this._curValue = key;
+				
 			}
 			
 			function objValueChange(){
@@ -332,6 +358,8 @@
 			query('.objectEditor').delegate('.toObject', 'onclick', toObject);
 			query('.objectEditor').delegate('.toArray', 'onclick', toArray);
 			query('.objectEditor').delegate('.curObj', 'onclick', curObj);
+			query('.objectEditor').delegate('.duplicate', 'blur', duplicateOnBlur);
+			
 			
 
 			
@@ -357,7 +385,7 @@
 							"</div>",
 							"<div class='editor'>",
 								"<div class='objKey'>",
-								type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text'/>",
+								type == 'array' ? "<div class='arrayIndex inputKey'>" + index + "</div>" : "<input class='inputKey' type='text' onblur='inputKeyOnBlur(event,this)'/>",
 								"</div>",
 								"<span class='colon'>:</span>",
 								"<div class='objValue'>",
@@ -393,6 +421,8 @@
 						<button class='addChild'>Add child</button>
 						<button class='removeChild'>Remove</button>
 						<button class='curObj'>curObj</button>
+						<input class='duplicate'>bb</input>
+
 					</div>
 					<div class='editor'>
 						<div class='objValue'>Object</div>
